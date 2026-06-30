@@ -56,14 +56,26 @@ class IO():
             print_log=self.arg.print_log)
         self.io.save_arg(self.arg)
 
-        # gpu
+        # gpu (with CUDA availability check)
         if self.arg.use_gpu:
-            gpus = torchlight.visible_gpu(self.arg.device)
-            torchlight.occupy_gpu(gpus)
-            self.gpus = gpus
-            self.dev = "cuda:0"
+            # Check if CUDA is available
+            if torch.cuda.is_available():
+                gpus = torchlight.visible_gpu(self.arg.device)
+                # Only occupy GPU if CUDA is truly available
+                if torch.cuda.is_available():
+                    torchlight.occupy_gpu(gpus)
+                self.gpus = gpus
+                self.dev = f"cuda:{gpus[0]}" if gpus else "cuda:0"
+                self.io.print_log(f'Using GPU: {self.dev}')
+            else:
+                # CUDA not available, fall back to CPU
+                self.io.print_log('CUDA not available, falling back to CPU')
+                self.dev = "cpu"
+                self.gpus = []
         else:
             self.dev = "cpu"
+            self.gpus = []
+            self.io.print_log('Using CPU')
 
     def load_model(self):
         self.model = self.io.load_model(self.arg.model,

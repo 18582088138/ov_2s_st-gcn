@@ -18,11 +18,19 @@ class Model(nn.Module):
 
     def forward(self, x):
         N, C, T, V, M = x.size()
-        # m = torch.cat((torch.cuda.FloatTensor(N, C, 1, V, M).zero_(),
-        #                 x[:, :, 1:-1] - 0.5 * x[:, :, 2:] - 0.5 * x[:, :, :-2],
-        #                 torch.cuda.FloatTensor(N, C, 1, V, M).zero_()), 2)
-        m = torch.cat((torch.cuda.FloatTensor(N, C, 1, V, M).zero_(),
-                        x[:, :, 1:] - x[:, :, :-1]), 2)
+
+        # Get device and dtype from input tensor (device-agnostic)
+        device = x.device
+        dtype = x.dtype
+
+        # Create zero tensor on the same device as input
+        zeros_start = torch.zeros(N, C, 1, V, M, device=device, dtype=dtype)
+
+        # Compute motion difference
+        motion_diff = x[:, :, 1:] - x[:, :, :-1]
+
+        # Concatenate
+        m = torch.cat((zeros_start, motion_diff), dim=2)
 
         res = self.origin_stream(x) + self.motion_stream(m)
         return res
