@@ -118,3 +118,7 @@ action.png
 pose_estimator/
 models/
 .gitignore
+"export_models/" 
+"outputs/" 
+"patches/" 
+"*.md.bak" 
